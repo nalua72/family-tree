@@ -1,0 +1,37 @@
+
+app/
+├── main.py
+│
+├── api/
+│   ├── routes/
+│   │   ├── persons.py
+│   │   └── relationships.py
+│   └── dependencies.py
+│
+├── core/
+│   ├── config.py
+│   └── exceptions.py
+│
+├── models/
+│   ├── person.py
+│   └── relationship.py
+│
+├── schemas/
+│   ├── person.py
+│   └── relationship.py
+│
+├── services/
+│   ├── person_service.py
+│   └── relationship_service.py
+│
+├── repositories/
+│   ├── person_repository.py
+│   └── relationship_repository.py
+│
+├── db/
+│   ├── base.py
+│   ├── session.py
+│   └── migrations/
+│
+└── utils/
+    └── validators.py

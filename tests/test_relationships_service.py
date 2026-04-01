@@ -2,10 +2,13 @@ import pytest
 import uuid
 from fastapi import HTTPException
 
-from app.schemas.persons import PersonCreate, PersonUpdate
-from app.services.relationships_service import get_ancestors, get_descendants, get_descendants_by_levels, find_relationship
-from app.services.person_service import get_persons_service, get_person_by_id_service, create_person_service, update_person_service, delete_person_service
-from app.db.base import Person
+from app.schemas.persons import PersonCreate
+from app.services.relationships_service import (get_ancestors_service,
+                                                get_descendants_service,
+                                                get_descendants_by_levels_service,
+                                                find_relationship_service
+                                                )
+from app.services.person_service import create_person_service
 
 
 def test_get_ancestors_three_levels(session):
@@ -35,7 +38,7 @@ def test_get_ancestors_three_levels(session):
     valid_set = set((grandparent.uuid, parent.uuid))
     # ACT
 
-    results = get_ancestors(session, child.uuid)
+    results = get_ancestors_service(session, child.uuid)
 
     result_set = set(result.uuid for result in results)
 
@@ -72,7 +75,7 @@ def test_get_ancestors_two_parents(session):
 
     # ACT
 
-    results = get_ancestors(session, child.uuid)
+    results = get_ancestors_service(session, child.uuid)
 
     result_set = set(result.uuid for result in results)
 
@@ -109,7 +112,7 @@ def test_get_descendents_three_levels(session):
 
     # ACT
 
-    results = get_descendants(session, grandparent.uuid)
+    results = get_descendants_service(session, grandparent.uuid)
 
     result_set = set(result.uuid for result in results)
 
@@ -182,7 +185,7 @@ def test_get_descendants_by_levels_success(session):
 
     # ACT
 
-    result_list = get_descendants_by_levels(session, A.uuid)
+    result_list = get_descendants_by_levels_service(session, A.uuid)
 
     result_set = [set(p.uuid for p in level) for level in result_list]
 
@@ -221,11 +224,11 @@ def test_find_relationship_linear_path_success(session):
     expected_path = [A.uuid, B.uuid, C.uuid]
 
     # ACT
-    result_path = find_relationship(session, A.uuid, C.uuid)
+    result_path = find_relationship_service(session, A.uuid, C.uuid)
 
     # ASSERT
 
-    assert result_path == expected_path
+    assert [r.uuid for r in result_path] == expected_path
 
 
 def test_find_relationship_reverse_path_success(session):
@@ -255,11 +258,11 @@ def test_find_relationship_reverse_path_success(session):
     expected_path = [C.uuid, B.uuid, A.uuid]
 
     # ACT
-    result_path = find_relationship(session, C.uuid, A.uuid)
+    result_path = find_relationship_service(session, C.uuid, A.uuid)
 
     # ASSERT
 
-    assert result_path == expected_path
+    assert [r.uuid for r in result_path] == expected_path
 
 
 def test_find_relationship_no_connection_raises_404(session):
@@ -281,7 +284,7 @@ def test_find_relationship_no_connection_raises_404(session):
     # ACT + Assert
 
     with pytest.raises(HTTPException) as exc:
-        find_relationship(session, A.uuid, B.uuid)
+        find_relationship_service(session, A.uuid, B.uuid)
 
     assert exc.value.status_code == 404
     assert "relación" in exc.value.detail.lower()
@@ -330,11 +333,11 @@ def test_find_relationship_multiple_paths_returns_shortest(session):
 
     # ACT
 
-    result_path = find_relationship(session, A.uuid, D.uuid)
+    result_path = find_relationship_service(session, A.uuid, D.uuid)
 
     # ASSERT
 
-    assert result_path == expected_path
+    assert [r.uuid for r in result_path] == expected_path
 
 
 def test_find_relationship_mixed_parent_paths(session):
@@ -371,11 +374,11 @@ def test_find_relationship_mixed_parent_paths(session):
     expected_path = [A.uuid, B.uuid, C.uuid, D.uuid]
 
     # ACT
-    result_path = find_relationship(session, A.uuid, D.uuid)
+    result_path = find_relationship_service(session, A.uuid, D.uuid)
 
     # ASSERT
 
-    assert result_path == expected_path
+    assert [r.uuid for r in result_path] == expected_path
 
 
 def test_find_relationship_same_person_returns_single_node(session):
@@ -392,11 +395,11 @@ def test_find_relationship_same_person_returns_single_node(session):
 
     # ACT
 
-    result_path = find_relationship(session, A.uuid, A.uuid)
+    result_path = find_relationship_service(session, A.uuid, A.uuid)
 
     # ASSERT
 
-    assert result_path == expected_path
+    assert [r.uuid for r in result_path] == expected_path
 
 
 def test_find_relationship_invalid_uuid_raises_400(session):
@@ -408,7 +411,7 @@ def test_find_relationship_invalid_uuid_raises_400(session):
     # ACT + ASSERT
 
     with pytest.raises(HTTPException) as exc:
-        find_relationship(session, invalid_uuid, invalid_uuid)
+        find_relationship_service(session, invalid_uuid, invalid_uuid)
 
     assert exc.value.status_code == 404
     assert "uuid" in exc.value.detail.lower()
@@ -417,7 +420,6 @@ def test_find_relationship_invalid_uuid_raises_400(session):
 def test_find_relationship_person_not_found_raises_404(session):
 
     # ARRANGE
-
     existing = create_person_service(session, PersonCreate(
         first_name="Test",
         first_surname="User",
@@ -427,9 +429,8 @@ def test_find_relationship_person_not_found_raises_404(session):
     non_existing_uuid = uuid.uuid4()
 
     # ACT + ASSERT
-
     with pytest.raises(HTTPException) as exc:
-        find_relationship(session, existing.uuid, non_existing_uuid)
+        find_relationship_service(session, existing.uuid, non_existing_uuid)
 
     assert exc.value.status_code == 404
     assert "no existe" in exc.value.detail.lower()

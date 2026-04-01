@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from collections import deque
 
 from sqlalchemy.orm import Session
-from app.schemas.persons import PersonCreate, PersonUpdate, PersonResponse
+from app.schemas.persons import PersonResponse
 from app.db.base import Person
 
 from app.utils.person_utils import (
@@ -15,7 +15,7 @@ from app.utils.person_utils import (
 )
 
 
-def get_ancestors(session: Session, person_uuid: uuid.UUID) -> list[PersonResponse]:
+def get_ancestors_service(session: Session, person_uuid: uuid.UUID) -> list[PersonResponse]:
     """Gets all the ancestors of a person"""
 
     stack: list[uuid.UUID] = []
@@ -62,7 +62,7 @@ def get_ancestors(session: Session, person_uuid: uuid.UUID) -> list[PersonRespon
     return [map_person_to_response(a) for a in ancestors]
 
 
-def get_descendants(session: Session, person_uuid: uuid.UUID) -> list[PersonResponse]:
+def get_descendants_service(session: Session, person_uuid: uuid.UUID) -> list[PersonResponse]:
     """"Gets all desdendants of a person"""
 
     stack: list[uuid.UUID] = [person_uuid]
@@ -98,7 +98,7 @@ def get_descendants(session: Session, person_uuid: uuid.UUID) -> list[PersonResp
     return [map_person_to_response(d) for d in descendants]
 
 
-def get_descendants_by_levels(session: Session, person_uuid: uuid.UUID) -> list[list[PersonResponse]]:
+def get_descendants_by_levels_service(session: Session, person_uuid: uuid.UUID) -> list[list[PersonResponse]]:
     """"Gets all desdendants of a person and stores them per level"""
 
     queue: list[tuple[uuid.UUID, int]] = [(person_uuid, 0)]
@@ -144,7 +144,7 @@ def get_descendants_by_levels(session: Session, person_uuid: uuid.UUID) -> list[
     return descendants
 
 
-def find_relationship(session: Session, source_uuid: uuid.UUID, target_uuid: uuid.UUID) -> list[uuid.UUID]:
+def find_relationship_service(session: Session, source_uuid: uuid.UUID, target_uuid: uuid.UUID) -> list[PersonResponse]:
     """Returns a list of uuid of the persons between source_uuid and target_uuid"""
 
     queue = deque([(source_uuid, [source_uuid])])
@@ -175,17 +175,25 @@ def find_relationship(session: Session, source_uuid: uuid.UUID, target_uuid: uui
 
         current_uuid, current_path = queue.popleft()
 
+        # If a connection is found: return the list of Persons in the path of the conenction
         if current_uuid == target_uuid:
-            return current_path
+
+            uuid_list_str = [str(u) for u in current_path]
+            persons_list = session.query(Person).filter(
+                Person.uuid.in_(uuid_list_str)).all()
+
+            persons_dict = {}
+            for person in persons_list:
+                persons_dict[person.uuid] = person
+
+            persons_list_ordered = [persons_dict[str(k)] for k in current_path]
+
+            # return a list of the PersonResponse type of the path
+
+            return [map_person_to_response(d) for d in persons_list_ordered]
 
         current_person = session.query(Person).filter(
             Person.uuid == str(current_uuid)).first()
-
-        if current_person is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"La persona con UUID {current_uuid} no existe"
-            )
 
         # Gets neigbors: Father, Mother and all children
         if current_person.father_uuid:
@@ -207,6 +215,7 @@ def find_relationship(session: Session, source_uuid: uuid.UUID, target_uuid: uui
                 new_path = current_path + [neighbor]
                 queue.append((neighbor, new_path))
 
+    # If No connection is found raises exception
     raise HTTPException(
         status_code=404,
         detail="No existe relación entre las personas"

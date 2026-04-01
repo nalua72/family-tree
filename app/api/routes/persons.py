@@ -1,6 +1,13 @@
 from app.db.sessions import get_db
 from app.schemas.persons import PersonCreate, PersonUpdate, PersonResponse
-from app.services.person_service import get_persons_service, get_person_by_id_service, create_person_service, update_person_service, delete_person_service, validate_uuid
+from app.services.person_service import (get_persons_service,
+                                         get_person_by_id_service,
+                                         create_person_service,
+                                         update_person_service,
+                                         delete_person_service,
+                                         validate_uuid
+                                         )
+
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 

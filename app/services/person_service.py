@@ -128,7 +128,7 @@ def delete_person_service(session: Session, uuid_str: str) -> dict[str, str]:
             detail=f"La persona con UUID {uuid_str} no existe"
         )
 
-    # Check if he/she is father or mother or someone
+    # Check if he/she is father or mother of someone
     has_children = session.query(Person).filter(
         (Person.father_uuid == str(uuid_obj)) |
         (Person.mother_uuid == str(uuid_obj))

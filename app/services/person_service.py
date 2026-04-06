@@ -1,6 +1,7 @@
 import uuid
 from fastapi import HTTPException, status
 
+from app.repositories.person_repository import get_person_by_uuid, get_all_persons, get_children, save_person, update_person, delete_person
 from sqlalchemy.orm import Session
 from app.schemas.persons import PersonCreate, PersonUpdate, PersonResponse
 from app.db.base import Person
@@ -16,7 +17,7 @@ from app.utils.person_utils import (
 def get_persons_service(session: Session) -> list[PersonResponse]:
     """Gets the value of all persons"""
 
-    persons = session.query(Person).all()
+    persons = get_all_persons(session)
 
     return [map_person_to_response(p) for p in persons]
 
@@ -26,8 +27,7 @@ def get_person_by_id_service(session: Session, uuid_str: str) -> PersonResponse:
 
     uuid_obj = validate_uuid(uuid_str)
 
-    person = session.query(Person).filter(
-        Person.uuid == str(uuid_obj)).first()
+    person = get_person_by_uuid(session, uuid_obj)
 
     if person is None:
         # Raise exception 404 Not Found
@@ -74,9 +74,7 @@ def create_person_service(session: Session, person: PersonCreate) -> PersonRespo
         birth_order=person.birth_order
     )
 
-    session.add(person_db)
-    session.commit()
-    session.refresh(person_db)
+    person_db = save_person(session, person_db)
 
     return map_person_to_response(person_db)
 
@@ -86,8 +84,7 @@ def update_person_service(session: Session, uuid_str: str, person: PersonUpdate)
 
     uuid_obj = validate_uuid(uuid_str)
 
-    person_db = session.query(Person).filter(
-        Person.uuid == str(uuid_obj)).first()
+    person_db = get_person_by_uuid(session, uuid_obj)
 
     if person_db is None:
         raise HTTPException(
@@ -108,8 +105,7 @@ def update_person_service(session: Session, uuid_str: str, person: PersonUpdate)
             # Maps the desired values of the person to the database
             setattr(person_db, field, value)
 
-    session.commit()
-    session.refresh(person_db)
+    person_db = update_person(session, person_db)
 
     return map_person_to_response(person_db)
 
@@ -119,29 +115,21 @@ def delete_person_service(session: Session, uuid_str: str) -> dict[str, str]:
 
     uuid_obj = validate_uuid(uuid_str)
 
-    person = session.query(Person).filter(
-        Person.uuid == str(uuid_obj)).first()
+    person_db = get_person_by_uuid(session, uuid_obj)
 
-    if person is None:
+    if person_db is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"La persona con UUID {uuid_str} no existe"
         )
 
-    # Check if he/she is father or mother of someone
-    has_children = session.query(Person).filter(
-        (Person.father_uuid == str(uuid_obj)) |
-        (Person.mother_uuid == str(uuid_obj))
-    ).first()
-
     # Can'be deleted
-    if has_children:
+    if get_children(session, uuid_obj):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No se puede borrar una persona que tiene hijos"
         )
 
-    session.delete(person)
-    session.commit()
+    delete_person(session, person_db)
 
     return {"detail": "Persona eliminada correctamente"}

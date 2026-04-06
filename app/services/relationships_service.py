@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.schemas.persons import PersonResponse
 from app.db.base import Person
 
+from app.repositories.person_repository import get_person_by_uuid, get_parents, get_children
 from app.utils.person_utils import (
     validate_uuid,
     validate_parent_uuid,
@@ -22,20 +23,10 @@ def get_ancestors_service(session: Session, person_uuid: uuid.UUID) -> list[Pers
     visited: set[uuid.UUID] = set()
     ancestors: list[Person] = []
 
-    person = session.query(Person).filter(
-        Person.uuid == str(person_uuid)).first()
+    parents = get_parents(session, person_uuid)
 
-    if person is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"La persona con UUID {person_uuid} no existe"
-        )
-
-    if person.father_uuid:
-        stack.append(uuid.UUID(person.father_uuid))
-
-    if person.mother_uuid:
-        stack.append(uuid.UUID(person.mother_uuid))
+    for parent in parents:
+        stack.append(uuid.UUID(parent.uuid))
 
     while stack:
         current_uuid = stack.pop()
@@ -45,19 +36,17 @@ def get_ancestors_service(session: Session, person_uuid: uuid.UUID) -> list[Pers
 
         visited.add(current_uuid)
 
-        current = session.query(Person).filter(
-            Person.uuid == str(current_uuid)).first()
+        current = get_person_by_uuid(session, current_uuid)
 
         if current is None:
             continue
 
         ancestors.append(current)
 
-        if current.father_uuid:
-            stack.append(uuid.UUID(current.father_uuid))
+        current_parents = get_parents(session, current_uuid)
 
-        if current.mother_uuid:
-            stack.append(uuid.UUID(current.mother_uuid))
+        for current_parent in current_parents:
+            stack.append(uuid.UUID(current_parent.uuid))
 
     return [map_person_to_response(a) for a in ancestors]
 
@@ -69,10 +58,7 @@ def get_descendants_service(session: Session, person_uuid: uuid.UUID) -> list[Pe
     visited: set[uuid.UUID] = set()
     descendants: list[Person] = []
 
-    person = session.query(Person).filter(
-        Person.uuid == str(person_uuid)).first()
-
-    if person is None:
+    if get_person_by_uuid(session, person_uuid) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"La persona con UUID {person_uuid} no existe"
@@ -86,14 +72,15 @@ def get_descendants_service(session: Session, person_uuid: uuid.UUID) -> list[Pe
 
         visited.add(current_uuid)
 
-        currents = session.query(Person).filter((Person.father_uuid == str(
-            current_uuid)) | (Person.mother_uuid == str(current_uuid)))
+        current_children = get_children(session, current_uuid)
 
-        for current in currents:
-            if current.uuid in visited:
+        for current_child in current_children:
+            current_child_uuid = uuid.UUID(current_child.uuid)
+
+            if current_child_uuid in visited:
                 continue
-            descendants.append(current)
-            stack.append(current.uuid)
+            stack.append(current_child_uuid)
+            descendants.append(current_child)
 
     return [map_person_to_response(d) for d in descendants]
 
@@ -101,21 +88,18 @@ def get_descendants_service(session: Session, person_uuid: uuid.UUID) -> list[Pe
 def get_descendants_by_levels_service(session: Session, person_uuid: uuid.UUID) -> list[list[PersonResponse]]:
     """"Gets all desdendants of a person and stores them per level"""
 
-    queue: list[tuple[uuid.UUID, int]] = [(person_uuid, 0)]
+    queue: list[tuple[uuid.UUID, int]] = deque([(person_uuid, 0)])
     visited: set[uuid.UUID] = set()
     descendants: list[list[PersonResponse]] = []
 
-    person = session.query(Person).filter(
-        Person.uuid == str(person_uuid)).first()
-
-    if person is None:
+    if get_person_by_uuid(session, person_uuid) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"La persona con UUID {person_uuid} no existe"
         )
 
     while queue:
-        current_uuid, level = queue.pop(0)
+        current_uuid, level = queue.popleft()
 
         if current_uuid in visited:
             continue
@@ -123,23 +107,28 @@ def get_descendants_by_levels_service(session: Session, person_uuid: uuid.UUID) 
         visited.add(current_uuid)
 
         # Gets all the children of a person
-        currents = session.query(Person).filter((Person.father_uuid == str(
-            current_uuid)) | (Person.mother_uuid == str(current_uuid)))
 
-        for current in currents:
+        current_children = get_children(session, current_uuid)
+
+        for current_child in current_children:
 
             child_level = level + 1
 
-            if current.uuid in visited:
+            current_child_uuid = uuid.UUID(current_child.uuid)
+
+            if current_child_uuid in visited:
                 continue
+
+            visited.add(current_child_uuid)
+
             # Creates a level for a descendant if doesn't exist
             while len(descendants) <= child_level - 1:
                 descendants.append([])
             # Stores the descendant in the proper level of the list
             descendants[child_level -
-                        1].append(map_person_to_response(current))
+                        1].append(map_person_to_response(current_child))
 
-            queue.append((current.uuid, child_level))
+            queue.append((current_child_uuid, child_level))
 
     return descendants
 
@@ -147,24 +136,19 @@ def get_descendants_by_levels_service(session: Session, person_uuid: uuid.UUID) 
 def find_relationship_service(session: Session, source_uuid: uuid.UUID, target_uuid: uuid.UUID) -> list[PersonResponse]:
     """Returns a list of uuid of the persons between source_uuid and target_uuid"""
 
-    queue = deque([(source_uuid, [source_uuid])])
-    visited = {source_uuid}
-
-    source_person = session.query(Person).filter(
-        Person.uuid == str(source_uuid)).first()
+    queue: list[uuid.UUID, list[uuid.UUID]] = deque(
+        [(source_uuid, [source_uuid])])
+    visited: set[uuid.UUID] = {source_uuid}
 
     # Source person doesn'exist
-    if source_person is None:
+    if get_person_by_uuid(session, source_uuid) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"La persona con UUID {source_uuid} no existe"
         )
 
-    target_person = session.query(Person).filter(
-        Person.uuid == str(target_uuid)).first()
-
-    # Source person doesn'exist
-    if target_person is None:
+    # Target person doesn'exist
+    if get_person_by_uuid(session, target_uuid) is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"La persona con UUID {target_uuid} no existe"
@@ -178,32 +162,18 @@ def find_relationship_service(session: Session, source_uuid: uuid.UUID, target_u
         # If a connection is found: return the list of Persons in the path of the conenction
         if current_uuid == target_uuid:
 
-            uuid_list_str = [str(u) for u in current_path]
-            persons_list = session.query(Person).filter(
-                Person.uuid.in_(uuid_list_str)).all()
-
-            persons_dict = {}
-            for person in persons_list:
-                persons_dict[person.uuid] = person
-
-            persons_list_ordered = [persons_dict[str(k)] for k in current_path]
+            persons_list = [get_person_by_uuid(
+                session, node_uuid) for node_uuid in current_path]
 
             # return a list of the PersonResponse type of the path
 
-            return [map_person_to_response(d) for d in persons_list_ordered]
+            return [map_person_to_response(d) for d in persons_list]
 
-        current_person = session.query(Person).filter(
-            Person.uuid == str(current_uuid)).first()
+        parents = get_parents(session, current_uuid)
+        children = get_children(session, current_uuid)
 
-        # Gets neigbors: Father, Mother and all children
-        if current_person.father_uuid:
-            neighbors.append(uuid.UUID(current_person.father_uuid))
-
-        if current_person.mother_uuid:
-            neighbors.append(uuid.UUID(current_person.mother_uuid))
-
-        children = session.query(Person).filter((Person.father_uuid == str(
-            current_uuid)) | (Person.mother_uuid == str(current_uuid)))
+        for parent in parents:
+            neighbors.append(uuid.UUID(parent.uuid))
 
         for child in children:
             neighbors.append(uuid.UUID(child.uuid))

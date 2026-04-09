@@ -4,9 +4,9 @@ from fastapi import HTTPException, status
 from collections import deque
 
 from sqlalchemy.orm import Session
-from app.schemas.persons import PersonResponse
 from app.db.base import Person
-
+from app.exceptions import invalid_relationship_path, person_not_found, relationship_not_found
+from app.schemas.persons import PersonResponse
 from app.schemas.relationships import RelationshipType, RelationshipResponse
 from app.repositories.person_repository import get_person_by_uuid, get_parents, get_children
 from app.utils.person_utils import (
@@ -60,10 +60,7 @@ def get_descendants_service(session: Session, person_uuid: uuid.UUID) -> list[Pe
     descendants: list[Person] = []
 
     if get_person_by_uuid(session, person_uuid) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"La persona con UUID {person_uuid} no existe"
-        )
+        raise person_not_found(person_uuid)
 
     while stack:
         current_uuid = stack.pop()
@@ -94,10 +91,7 @@ def get_descendants_by_levels_service(session: Session, person_uuid: uuid.UUID) 
     descendants: list[list[PersonResponse]] = []
 
     if get_person_by_uuid(session, person_uuid) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"La persona con UUID {person_uuid} no existe"
-        )
+        raise person_not_found(person_uuid)
 
     while queue:
         current_uuid, level = queue.popleft()
@@ -141,17 +135,11 @@ def find_relationship_service(session: Session, source_uuid: uuid.UUID, target_u
 
     # Source person doesn'exist
     if get_person_by_uuid(session, source_uuid) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"La persona con UUID {source_uuid} no existe"
-        )
+        raise person_not_found(source_uuid)
 
     # Target person doesn'exist
     if get_person_by_uuid(session, target_uuid) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"La persona con UUID {target_uuid} no existe"
-        )
+        raise person_not_found(target_uuid)
 
     while queue:
         neighbors: list[uuid.UUID] = []
@@ -185,10 +173,7 @@ def find_relationship_service(session: Session, source_uuid: uuid.UUID, target_u
                 queue.append((neighbor, new_path))
 
     # If No connection is found raises exception
-    raise HTTPException(
-        status_code=404,
-        detail="No existe relación entre las personas"
-    )
+    raise relationship_not_found(source_uuid, target_uuid)
 
 
 def get_relationship_type(session: Session, source_uuid: uuid.UUID, target_uuid: uuid.UUID) -> RelationshipResponse:
@@ -204,8 +189,6 @@ def get_relationship_type(session: Session, source_uuid: uuid.UUID, target_uuid:
     summary = summarize_movements(movements)
 
     return RelationshipResponse(relationship=map_to_relationship(summary), distance=len(movements))
-
-    # return {map_to_relationship(summary)}
 
 
 def get_movements_from_path(session: Session, path: list[uuid.UUID]) -> list[int]:
@@ -224,10 +207,7 @@ def get_movements_from_path(session: Session, path: list[uuid.UUID]) -> list[int
         elif any(parent.uuid == next_uuid_str for parent in parents):
             movements.append(1)
         else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid relationship path: {next_uuid}, {current_uuid} nodes are not directly connected"
-            )
+            raise invalid_relationship_path(current_uuid, next_uuid)
 
     return movements
 

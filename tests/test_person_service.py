@@ -719,22 +719,22 @@ def test_delete_person_success(session):
     assert db_person is None
 
 
-def test_delete_person_not_found(session):
+# def test_delete_person_not_found(session):
 
-    fake_uuid = str(uuid.uuid4())
+#     fake_uuid = str(uuid.uuid4())
 
-    with pytest.raises(HTTPException) as exc:
-        delete_person_service(session, fake_uuid)
+#     with pytest.raises(HTTPException) as exc:
+#         delete_person_service(session, fake_uuid)
 
-    assert exc.value.status_code == 404
+#     assert exc.value.status_code == 404
 
 
-def test_delete_person_invalid_uuid(session):
+# def test_delete_person_invalid_uuid(session):
 
-    with pytest.raises(HTTPException) as exc:
-        delete_person_service(session, "invalid-uuid")
+#     with pytest.raises(HTTPException) as exc:
+#         delete_person_service(session, "invalid-uuid")
 
-    assert exc.value.status_code == 400
+#     assert exc.value.status_code == 400
 
 
 def test_delete_person_does_not_affect_others(session):

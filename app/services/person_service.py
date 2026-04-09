@@ -103,19 +103,17 @@ def update_person_service(session: Session, person_uuid: uuid.UUID, person: Pers
     return map_person_to_response(person_db)
 
 
-def delete_person_service(session: Session, uuid_str: str) -> dict[str, str]:
+def delete_person_service(session: Session, person_uuid: uuid.UUID) -> dict[str, str]:
     """Manages the process of deleting a person using his/her uuid from the database"""
 
-    uuid_obj = validate_uuid(uuid_str)
-
-    person_db = get_person_by_uuid(session, uuid_obj)
+    person_db = get_person_by_uuid(session, person_uuid)
 
     if person_db is None:
-        raise person_not_found(uuid_str)
+        raise person_not_found(person_uuid)
 
     # Can'be deleted
-    if get_children(session, uuid_obj):
-        raise cannot_delete_person_with_children(uuid_str)
+    if get_children(session, person_uuid):
+        raise cannot_delete_person_with_children(person_uuid)
 
     delete_person(session, person_db)
 

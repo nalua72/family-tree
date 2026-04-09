@@ -4,9 +4,11 @@ from app.db.sessions import get_db
 from app.services.relationships_service import (get_ancestors_service,
                                                 get_descendants_service,
                                                 get_descendants_by_levels_service,
-                                                find_relationship_service
+                                                find_relationship_service,
+                                                get_relationship_type
                                                 )
 from app.schemas.persons import PersonResponse
+from app.schemas.relationships import RelationshipResponse
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 
@@ -46,3 +48,12 @@ def get_descendants_by_level(person_uuid: uuid.UUID, session: Session = Depends(
             description="Returns the shortest relationship path between two persons, including both source and target.")
 def find_relationship(person_source_uuid: uuid.UUID, person_target_uuid: uuid.UUID, session: Session = Depends(get_db)):
     return find_relationship_service(session, person_source_uuid, person_target_uuid)
+
+# Endpoint to get the relationship type between 2 persons
+
+
+@router.get("/{source_uuid}/{target_uuid}", response_model=RelationshipResponse,
+            summary="Get relationship type between two person including the distance between them",
+            description="Returns the relationship type (e.g., PARENT, CHILD, SIBLING, COUSIN) between two persons")
+def get_relationship_type_endpoint(source_uuid: uuid.UUID, target_uuid: uuid.UUID, session: Session = Depends(get_db)):
+    return get_relationship_type(session, source_uuid, target_uuid)

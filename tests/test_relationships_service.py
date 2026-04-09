@@ -3,10 +3,13 @@ import uuid
 from fastapi import HTTPException
 
 from app.schemas.persons import PersonCreate
+from app.schemas.relationships import RelationshipType
 from app.services.relationships_service import (get_ancestors_service,
                                                 get_descendants_service,
                                                 get_descendants_by_levels_service,
-                                                find_relationship_service
+                                                find_relationship_service,
+                                                get_relationship_type,
+                                                get_movements_from_path
                                                 )
 from app.services.person_service import create_person_service
 
@@ -434,3 +437,472 @@ def test_find_relationship_person_not_found_raises_404(session):
 
     assert exc.value.status_code == 404
     assert "no existe" in exc.value.detail.lower()
+
+
+def test_get_movements_from_path_child_to_parent_returns_up(session):
+
+    # ARRANGE
+
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    expected_movement = [1]
+
+    # ACT
+
+    returned_movement = get_movements_from_path(session, [B.uuid, A.uuid])
+
+    # ASSERT
+
+    assert returned_movement == expected_movement
+
+
+def test_get_movements_from_path_parent_to_child_returns_down(session):
+
+    # ARRANGE
+
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    expected_movement = [-1]
+
+    # ACT
+
+    returned_movement = get_movements_from_path(session, [A.uuid, B.uuid])
+
+    # ASSERT
+
+    assert returned_movement == expected_movement
+
+
+def test_get_movements_from_path_multiple_levels_returns_correct_sequence(session):
+
+    # ARRANGE
+
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=B.uuid
+    ))
+
+    # A -> B -> C (parent → child → child)
+    expected_movement = [-1, -1]
+
+    # ACT
+
+    returned_movement = get_movements_from_path(
+        session, [A.uuid, B.uuid, C.uuid])
+
+    # ASSERT
+
+    assert returned_movement == expected_movement
+
+
+def test_get_movements_from_path_sibling_path_returns_up_down(session):
+
+    # ARRANGE
+
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    # B -> A -> C (child → parent → child)
+    expected_movement = [1, -1]
+
+    # ACT
+
+    returned_movement = get_movements_from_path(
+        session, [B.uuid, A.uuid, C.uuid])
+
+    # ASSERT
+
+    assert returned_movement == expected_movement
+
+
+def test_get_movements_from_path_complex_path_returns_correct_sequence(session):
+    # ARRANGE
+
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    D = create_person_service(session, PersonCreate(
+        first_name="D",
+        first_surname="D1",
+        second_surname="D2",
+        father_uuid=B.uuid
+    ))
+
+    E = create_person_service(session, PersonCreate(
+        first_name="E",
+        first_surname="E1",
+        second_surname="E2",
+        father_uuid=C.uuid
+    ))
+
+    # D -> B -> A -> C -> E (child → parent → grandparent → parent → child)
+    expected_movement = [1, 1, -1, -1]
+
+    # ACT
+
+    returned_movement = get_movements_from_path(
+        session, [D.uuid, B.uuid, A.uuid, C.uuid, E.uuid])
+
+    # ASSERT
+
+    assert returned_movement == expected_movement
+
+
+def test_get_movements_from_path_non_adjacent_nodes_raises_http_exception(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=B.uuid
+    ))
+
+    # ACT + ASSERT
+    with pytest.raises(HTTPException) as exc:
+        get_movements_from_path(session, [B.uuid, C.uuid, A.uuid])
+
+    assert exc.value.status_code == 400
+    assert "invalid relationship path" in exc.value.detail.lower()
+
+
+def test_get_relationship_type_same_person_returns_self(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    expected_relationship = RelationshipType.SELF
+    expected_distance = 0
+
+    # ACT
+
+    returned = get_relationship_type(session, A.uuid, A.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_parent_to_child_returns_child(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    # A is parent of B → relationship should be CHILD
+    expected_realtionship = RelationshipType.CHILD
+    expected_distance = 1
+
+    # ACT
+
+    returned = get_relationship_type(session, A.uuid, B.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_realtionship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_child_to_parent_returns_parent(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    # B is child of A → relationship should be PARENT
+    expected_relationship = RelationshipType.PARENT
+    expected_distance = 1
+
+    # ACT
+
+    returned = get_relationship_type(session, B.uuid, A.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_siblings_returns_sibling(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    # B is sibling of C → relationship should be SIBLING
+    expected_relationship = RelationshipType.SIBLING
+    expected_distance = 2
+
+    # ACT
+
+    returned = get_relationship_type(session, B.uuid, C.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_nephew_returns_nephew(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    D = create_person_service(session, PersonCreate(
+        first_name="D",
+        first_surname="D1",
+        second_surname="D2",
+        father_uuid=B.uuid
+    ))
+
+    # D is nephew of C → relationship should be NEPHEW
+    expected_relationship = RelationshipType.NEPHEW
+    expected_distance = 3
+
+    # ACT
+
+    returned = get_relationship_type(session, C.uuid, D.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_uncle_returns_uncle(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    D = create_person_service(session, PersonCreate(
+        first_name="D",
+        first_surname="D1",
+        second_surname="D2",
+        father_uuid=B.uuid
+    ))
+
+    # C is uncle of D → relationship should be UNCLE
+    expected_relationship = RelationshipType.UNCLE
+    expected_distance = 3
+
+    # ACT
+
+    returned = get_relationship_type(session, D.uuid, C.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance
+
+
+def test_get_relationship_type_cousins_returns_cousin(session):
+
+    # ARRANGE
+    A = create_person_service(session, PersonCreate(
+        first_name="A",
+        first_surname="A1",
+        second_surname="A2"
+    ))
+
+    B = create_person_service(session, PersonCreate(
+        first_name="B",
+        first_surname="B1",
+        second_surname="B2",
+        father_uuid=A.uuid
+    ))
+
+    C = create_person_service(session, PersonCreate(
+        first_name="C",
+        first_surname="C1",
+        second_surname="C2",
+        father_uuid=A.uuid
+    ))
+
+    D = create_person_service(session, PersonCreate(
+        first_name="D",
+        first_surname="D1",
+        second_surname="D2",
+        father_uuid=B.uuid
+    ))
+
+    E = create_person_service(session, PersonCreate(
+        first_name="E",
+        first_surname="E1",
+        second_surname="E2",
+        father_uuid=C.uuid
+    ))
+
+    # E is cousin of D → relationship should be COUSIN
+    expected_relationship = RelationshipType.COUSIN
+    expected_distance = 4
+
+    # ACT
+
+    returned = get_relationship_type(session, D.uuid, E.uuid)
+
+    # ASSERT
+
+    assert returned.relationship == expected_relationship
+    assert returned.distance == expected_distance

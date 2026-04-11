@@ -1,6 +1,9 @@
 """
     Módulo que se encarga de crear una db en memoria para las pruebas
 """
+from fastapi.testclient import TestClient
+from app.main import app
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -33,3 +36,8 @@ def session():
         db.close()
         # Delete al ltables after the testing
         Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)

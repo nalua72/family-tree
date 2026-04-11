@@ -13,12 +13,12 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
 
 
-router = APIRouter()
+router = APIRouter(prefix="/persons", tags=["persons"])
 
 # Endpoint to get all persons
 
 
-@router.get("/persons",
+@router.get("/",
             response_model=list[PersonResponse],
             summary="Get all persons",
             description="Return all the persons in the database"
@@ -29,7 +29,7 @@ def get_persons(session: Session = Depends(get_db)):
 # Endpoint to get a person by uuid
 
 
-@router.get("/persons/{person_uuid_str}",
+@router.get("/{person_uuid_str}",
             response_model=PersonResponse,
             responses={
                 400: {
@@ -54,7 +54,7 @@ def get_person(person_uuid_str: str, session: Session = Depends(get_db)):
 # Endpoint to get add a person
 
 
-@router.post("/persons",
+@router.post("/",
              status_code=201,
              response_model=PersonResponse,
              responses={
@@ -72,7 +72,7 @@ def create_person(person: PersonCreate, session: Session = Depends(get_db)):
 # Endpoint to update a person
 
 
-@router.patch("/persons/{person_uuid_str}",
+@router.patch("/{person_uuid_str}",
               response_model=PersonResponse,
               responses={
                   400: {
@@ -97,7 +97,7 @@ def update_person(person_uuid_str: str, person: PersonUpdate, session: Session =
 # Endpoint to delete a person
 
 
-@router.delete("/persons/{person_uuid_str}",
+@router.delete("/{person_uuid_str}",
                response_model=ErrorResponse,
                responses={
                    400: {

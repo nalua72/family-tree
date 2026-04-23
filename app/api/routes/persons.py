@@ -8,6 +8,7 @@ from app.services.person_service import (get_persons_service,
                                          delete_person_service,
                                          validate_uuid
                                          )
+from app.services.tree_service import get_person_tree_service
 
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends
@@ -117,3 +118,27 @@ def delete_person(person_uuid_str: str, session: Session = Depends(get_db)):
     person_uuid = validate_uuid(person_uuid_str)
 
     return delete_person_service(session, person_uuid)
+
+
+@router.get("/{person_uuid_str}/tree",
+            response_model=dict,
+            responses={
+                400: {
+                    "model": ErrorResponse,
+                    "description": "Invalid UUID format or invalid relationship path"
+                },
+                404: {
+                    "model": ErrorResponse,
+                    "description": "Person not found"
+                }
+            },
+            summary="PENDING",
+            description="PENDING"
+            )
+def get_person_tree(person_uuid_str: str, depth: int = 1, session: Session = Depends(get_db)):
+
+    # HTTPException if uuid is invalid
+    person_uuid = validate_uuid(person_uuid_str)
+   # person = get_person_by_id_service(session, person_uuid)
+
+    return get_person_tree_service(session, person_uuid, depth)

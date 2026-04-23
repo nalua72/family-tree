@@ -1,6 +1,7 @@
 from app.db.sessions import get_db
 from app.schemas.errors import ErrorResponse
 from app.schemas.persons import PersonCreate, PersonUpdate, PersonResponse
+from app.schemas.tree import PersonTreeResponse
 from app.services.person_service import (get_persons_service,
                                          get_person_by_id_service,
                                          create_person_service,
@@ -121,7 +122,7 @@ def delete_person(person_uuid_str: str, session: Session = Depends(get_db)):
 
 
 @router.get("/{person_uuid_str}/tree",
-            response_model=dict,
+            response_model=PersonTreeResponse,
             responses={
                 400: {
                     "model": ErrorResponse,
@@ -139,6 +140,5 @@ def get_person_tree(person_uuid_str: str, depth: int = 1, session: Session = Dep
 
     # HTTPException if uuid is invalid
     person_uuid = validate_uuid(person_uuid_str)
-   # person = get_person_by_id_service(session, person_uuid)
 
     return get_person_tree_service(session, person_uuid, depth)

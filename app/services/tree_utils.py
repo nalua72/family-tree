@@ -27,4 +27,4 @@ def build_edge(direction: str, current_id: str, neighbor_id: str) -> EdgeDict:
     if direction == "down":
         return (current_id, neighbor_id, "parent")
     else:
-        return (neighbor_id, current_id, "child")
+        return (neighbor_id, current_id, "parent")

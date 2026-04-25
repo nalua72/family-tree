@@ -12,7 +12,8 @@ from app.services.person_service import (get_persons_service,
 from app.services.tree_service import get_person_tree_service
 
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Query, Depends
+from typing import Annotated
 
 
 router = APIRouter(prefix="/persons", tags=["persons"])
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/persons", tags=["persons"])
             summary="Get all persons",
             description="Return all the persons in the database"
             )
-def get_persons(session: Session = Depends(get_db)):
+def get_persons(session: Session = Depends(get_db)) -> list[PersonResponse]:
     return get_persons_service(session)
 
 # Endpoint to get a person by uuid
@@ -46,7 +47,7 @@ def get_persons(session: Session = Depends(get_db)):
             summary="Get a person by their UUID",
             description="Return a person by their UUID"
             )
-def get_person(person_uuid_str: str, session: Session = Depends(get_db)):
+def get_person(person_uuid_str: str, session: Session = Depends(get_db)) -> PersonResponse:
 
     # HTTPException if uuid is invalid
     person_uuid = validate_uuid(person_uuid_str)
@@ -68,7 +69,7 @@ def get_person(person_uuid_str: str, session: Session = Depends(get_db)):
              summary="Create a new person",
              description="Create a new person"
              )
-def create_person(person: PersonCreate, session: Session = Depends(get_db)):
+def create_person(person: PersonCreate, session: Session = Depends(get_db)) -> PersonResponse:
     return create_person_service(session, person)
 
 # Endpoint to update a person
@@ -89,7 +90,7 @@ def create_person(person: PersonCreate, session: Session = Depends(get_db)):
               summary="Update the data of a person",
               description="Update the data of a person"
               )
-def update_person(person_uuid_str: str, person: PersonUpdate, session: Session = Depends(get_db)):
+def update_person(person_uuid_str: str, person: PersonUpdate, session: Session = Depends(get_db)) -> PersonResponse:
 
     # HTTPException if uuid is invalid
     person_uuid = validate_uuid(person_uuid_str)
@@ -133,10 +134,24 @@ def delete_person(person_uuid_str: str, session: Session = Depends(get_db)):
                     "description": "Person not found"
                 }
             },
-            summary="PENDING",
-            description="PENDING"
+            summary="Get a person's family tree"",
+            description="""
+            Return a person's family tree up to the specified depth.
+
+            The response includes the requested person as the root node, plus all reachable
+            relatives within the given number of relationship steps.
+
+            Relationships are always returned in stable parent-to-child direction:
+            - `source` is the parent
+            - `target` is the child
+            - `type` is always `"parent"`
+
+            Use the `depth` query parameter to control how many relationship levels are included:
+            - `0` returns only the root person
+            - `1` includes direct parents and children
+            - `2` includes second-level relatives"""
             )
-def get_person_tree(person_uuid_str: str, depth: int = 1, session: Session = Depends(get_db)):
+def get_person_tree(person_uuid_str: str, depth: Annotated[int, Query(ge=0)] = 1, session: Session = Depends(get_db)) -> PersonTreeResponse:
 
     # HTTPException if uuid is invalid
     person_uuid = validate_uuid(person_uuid_str)

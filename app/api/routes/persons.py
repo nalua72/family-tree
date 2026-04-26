@@ -134,7 +134,7 @@ def delete_person(person_uuid_str: str, session: Session = Depends(get_db)):
                     "description": "Person not found"
                 }
             },
-            summary="Get a person's family tree"",
+            summary="Get a person's family tree",
             description="""
             Return a person's family tree up to the specified depth.
 

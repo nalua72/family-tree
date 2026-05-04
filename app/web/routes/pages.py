@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from app.db.sessions import get_db
@@ -22,14 +23,15 @@ def get_index(request: Request, session: Session = Depends(get_db)):
 
 @router.get("/nodes", response_class=HTMLResponse)
 def get_index(request: Request, session: Session = Depends(get_db)):
-    edges_dict: dict[str, list[str]] = {}
     nodes_dict = {}
-    relations = []
+    family_relations = {"parents": [], "children": []}
+    family_relations_list = defaultdict(list)
+    inverted_family_relations = defaultdict(list)
 
     # Yo
     # root_uuid = uuid.UUID("93ac9712-da7d-4615-b429-090cbb3b3388")
     # Papa
-    # root_uuid = uuid.UUID("efbe542f-070e-4540-b5e6-723d6b947bee")
+    root_uuid = uuid.UUID("efbe542f-070e-4540-b5e6-723d6b947bee")
     # Saul
     root_uuid = uuid.UUID("057274ec-9ef5-4684-b223-2b30640e5109")
 
@@ -40,16 +42,18 @@ def get_index(request: Request, session: Session = Depends(get_db)):
         nodes_dict[person.id] = person
 
     for edge in relationship_tree.edges:
-        target_person = nodes_dict[edge.target]
+        family_relations_list[edge.source].append(edge.target)
 
-        if edge.source in edges_dict:
-            edges_dict[edge.source].append(target_person)
-        else:
-            edges_dict[edge.source] = [target_person]
+    # Group parent ID using children as key, converting first the list to a tuple
 
-    for source, target_list in edges_dict.items():
-        for target in target_list:
-            relations.append([nodes_dict[source], target, "padre"])
+    for parent_id, children in family_relations_list.items():
+        inverted_family_relations[tuple(children)].append(parent_id)
+
+    # Final formatting
+    family_relations = [
+        {"parents": [nodes_dict[parent]
+                     for parent in parent_list], "children": [nodes_dict[child] for child in list(children_tuple)]} for children_tuple, parent_list in inverted_family_relations.items()
+    ]
 
     return templates.TemplateResponse(
-        request=request, context={"person_relationship": relations}, name="nodes.html")
+        request=request, context={"person_relationship": family_relations}, name="nodes.html")

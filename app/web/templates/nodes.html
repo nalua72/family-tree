@@ -9,14 +9,21 @@
 
 <body>
     <h1>Arbol Genealógico</h1>
+    <p>Estas son las relaciones de la BBDD: </p>
 
-    <p>Estas son las relaciones de la BBDD:
-        {% for edge in person_relationship %}
-        <li>
-            {{ edge[0]["name"] }} {{ edge[0]["first_surname"] }} {{ edge[0]["second_surname"] }} es {{ edge[2] }} de {{
-            edge[1]["name"] }} {{ edge[1]["first_surname"] }} {{ edge[1]["second_surname"] }}
-        </li>
-        {% endfor %}
-    </p>
-
+    {% for relationship in person_relationship %}
+    <div>
+        <div>
+            {% for parent in relationship["parents"] %}
+            {{ parent.name }} {{ parent.first_surname }} {{ parent.second_surname }}
+            {% endfor %}
+        </div>
+        <div>
+            {% for child in relationship["children"] %}
+            {{ child.name }} {{ child.first_surname }} {{ child.second_surname }}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    </div>
 </body>

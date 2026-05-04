@@ -4,10 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbol genéalogioc</title>
+    <title>Arbol genealógico</title>
 </head>
 
 <body>
-    <h1>Arbol Genéalogico</h1>
+    <h1>Arbol Genealógico</h1>
     <p>Este es el contenido visible.</p>
+    <p>Este son los personas de la BBDD:
+        {% for person in person_list %}
+        <li>
+            {{ person["first_name"] }}
+            {{ person["first_surname"] }}
+            {{ person["second_surname"] }}
+            {{ person["uuid"] }}
+
+        </li>
+        {% endfor %}
+    </p>
 </body>

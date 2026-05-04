@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbol genealógico</title>
+</head>
+
+<body>
+    <h1>Arbol Genealógico</h1>
+
+    <p>Estas son las relaciones de la BBDD:
+        {% for edge in person_relationship %}
+        <li>
+            {{ edge[0]["name"] }} {{ edge[0]["first_surname"] }} {{ edge[0]["second_surname"] }} es {{ edge[2] }} de {{
+            edge[1]["name"] }} {{ edge[1]["first_surname"] }} {{ edge[1]["second_surname"] }}
+        </li>
+        {% endfor %}
+    </p>
+
+</body>

@@ -45,11 +45,13 @@ def get_index(root_uuid_str: str, request: Request, session: Session = Depends(g
     for parent_id, children in family_relations_list.items():
         inverted_family_relations[tuple(children)].append(parent_id)
 
-    # Final formatting
     family_relations = [
         {"parents": [nodes_dict[parent]
-                     for parent in parent_list], "children": [nodes_dict[child] for child in list(children_tuple)]} for children_tuple, parent_list in inverted_family_relations.items()
-    ]
+                     for parent in parent_list], "children": [nodes_dict[child] for child in list(children_tuple)]} for children_tuple, parent_list in inverted_family_relations.items()]
+
+    # Final formatting
+    family_relations_dict = {
+        "person_to_display": nodes_dict[root_uuid_str], "family": family_relations}
 
     return templates.TemplateResponse(
-        request=request, context={"person_relationship": family_relations}, name="nodes.html")
+        request=request, context={"person_relationship": family_relations_dict}, name="nodes.html")

@@ -8,10 +8,11 @@
 </head>
 
 <body>
-    <h1>Arbol Genealógico</h1>
-    <p>Estas son las relaciones de la BBDD: </p>
+    <h1>Arbol Genealógico de {{ person_relationship["person_to_display"].name }} {{
+        person_relationship["person_to_display"].first_surname }} {{
+        person_relationship["person_to_display"].second_surname }}</h1>
 
-    {% for relationship in person_relationship %}
+    {% for relationship in person_relationship["family"] %}
     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 50px;">
 
         <!-- Parent container -->
@@ -21,7 +22,8 @@
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <div
                     style="border: 4px solid #333; padding: 8px 12px; border-radius: 6px; background: white; z-index: 2; font-weight: bold;">
-                    {{ parent.name }} {{ parent.first_surname }} {{ parent.second_surname }}
+                    <a href="http://localhost:8000/nodes/{{ parent.id }}?depth=2">{{ parent.name }} {{
+                        parent.first_surname }} {{ parent.second_surname }}</a>
                 </div>
                 <!-- Vertical line from parent -->
                 <div style="width: 2px; height: 20px; background-color: #333;"></div>
@@ -39,11 +41,15 @@
                 <div style="width: 2px; height: 20px; background-color: #333;"></div>
                 <div
                     style="border: 1px solid #666; padding: 8px 12px; border-radius: 6px; background: #f9f9f9; font-weight: lighter;">
-                    {{ child.name }} {{ child.first_surname }} {{ child.second_surname }}
+                    <a href="http://localhost:8000/nodes/{{ child.id }}?depth=2">{{ child.name }} {{
+                        child.first_surname }} {{ child.second_surname }}</a>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
     {% endfor %}
+
+    <a href="http://localhost:8000"> Inicio</a>
+
 </body>

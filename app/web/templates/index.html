@@ -13,12 +13,17 @@
     <p>Este son los personas de la BBDD:
         {% for person in person_list %}
         <li>
-            {{ person["first_name"] }}
-            {{ person["first_surname"] }}
-            {{ person["second_surname"] }}
-            {{ person["uuid"] }}
+            <a href="http://localhost:8000/nodes/{{ person['uuid'] }}?depth=2">
+                {{ person["first_name"] }}
+                {{ person["first_surname"] }}
+                {{ person["second_surname"] }}
+            </a>
 
         </li>
         {% endfor %}
     </p>
+
+
+
+
 </body>

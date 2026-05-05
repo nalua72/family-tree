@@ -20,7 +20,7 @@
             {% for parent in relationship["parents"] %}
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <div
-                    style="border: 2px solid #333; padding: 8px 12px; border-radius: 6px; background: white; z-index: 2;">
+                    style="border: 4px solid #333; padding: 8px 12px; border-radius: 6px; background: white; z-index: 2; font-weight: bold;">
                     {{ parent.name }} {{ parent.first_surname }} {{ parent.second_surname }}
                 </div>
                 <!-- Vertical line from parent -->
@@ -37,7 +37,8 @@
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <!-- Vertical line from child -->
                 <div style="width: 2px; height: 20px; background-color: #333;"></div>
-                <div style="border: 1px solid #666; padding: 8px 12px; border-radius: 6px; background: #f9f9f9;">
+                <div
+                    style="border: 1px solid #666; padding: 8px 12px; border-radius: 6px; background: #f9f9f9; font-weight: lighter;">
                     {{ child.name }} {{ child.first_surname }} {{ child.second_surname }}
                 </div>
             </div>

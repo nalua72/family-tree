@@ -12,18 +12,37 @@
     <p>Estas son las relaciones de la BBDD: </p>
 
     {% for relationship in person_relationship %}
-    <div>
-        <div>
+    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 50px;">
+
+        <!-- Parent container -->
+        <div
+            style="display: flex; gap: 20px; border-bottom: 2px solid #333; justify-content: center; align-items: flex-end;">
             {% for parent in relationship["parents"] %}
-            {{ parent.name }} {{ parent.first_surname }} {{ parent.second_surname }}
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div
+                    style="border: 2px solid #333; padding: 8px 12px; border-radius: 6px; background: white; z-index: 2;">
+                    {{ parent.name }} {{ parent.first_surname }} {{ parent.second_surname }}
+                </div>
+                <!-- Vertical line from parent -->
+                <div style="width: 2px; height: 20px; background-color: #333;"></div>
+            </div>
             {% endfor %}
         </div>
-        <div>
+
+        <!-- <div style="border-top: 2px solid #333; width: 80%; margin-top: -2px; position: relative;"></div> -->
+
+        <!-- Children container -->
+        <div style="display: flex; gap: 20px; border-top: 2px solid #333; padding-top: 0;">
             {% for child in relationship["children"] %}
-            {{ child.name }} {{ child.first_surname }} {{ child.second_surname }}
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <!-- Vertical line from child -->
+                <div style="width: 2px; height: 20px; background-color: #333;"></div>
+                <div style="border: 1px solid #666; padding: 8px 12px; border-radius: 6px; background: #f9f9f9;">
+                    {{ child.name }} {{ child.first_surname }} {{ child.second_surname }}
+                </div>
+            </div>
             {% endfor %}
         </div>
     </div>
     {% endfor %}
-    </div>
 </body>

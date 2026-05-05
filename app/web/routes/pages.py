@@ -36,7 +36,7 @@ def get_index(request: Request, session: Session = Depends(get_db)):
     root_uuid = uuid.UUID("057274ec-9ef5-4684-b223-2b30640e5109")
 
     relationship_tree = get_person_tree_service(
-        session=session, person_uuid=root_uuid, depth=3)
+        session=session, person_uuid=root_uuid, depth=4)
 
     for person in relationship_tree.nodes:
         nodes_dict[person.id] = person

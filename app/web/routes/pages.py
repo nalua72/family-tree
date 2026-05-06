@@ -12,7 +12,7 @@ from app.web.templates import templates
 router = APIRouter()
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", name="home", response_class=HTMLResponse)
 def get_index(request: Request, session: Session = Depends(get_db)) -> HTMLResponse:
 
     person_list = get_persons_service(session=session)
@@ -21,7 +21,7 @@ def get_index(request: Request, session: Session = Depends(get_db)) -> HTMLRespo
         request=request, context={"person_list": person_list}, name="index.html")
 
 
-@router.get("/nodes/{root_uuid_str}", response_class=HTMLResponse)
+@router.get("/nodes/{root_uuid_str}", name="tree_view", response_class=HTMLResponse)
 def get_index(root_uuid_str: str,
               request: Request,
               session: Session = Depends(get_db),

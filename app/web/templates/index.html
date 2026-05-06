@@ -5,21 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arbol genealógico</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/tree.css') }}">
 </head>
 
 <body>
-    <h1>Arbol Genealógico</h1>
-    <p>Este es el contenido visible.</p>
-    <p>Este son los personas de la BBDD:
+    <h1>Miembros de la familia</h1>
+    <div class="family-group">
+        <p>Este son los personas de la BBDD:</p>
         {% for person in person_list %}
         <li>
-            <a href="http://localhost:8000/nodes/{{ person['uuid'] }}?depth=2">
-                {{ person["first_name"] }}
-                {{ person["first_surname"] }}
-                {{ person["second_surname"] }}
+            <a href="{{ url_for('tree_view', root_uuid_str=person.uuid) }}?depth=2">
+                {{ person.first_name }}
+                {{ person.first_surname }}
+                {{ person.second_surname }}
             </a>
-
         </li>
         {% endfor %}
-    </p>
+    </div>
 </body>

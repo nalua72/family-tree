@@ -5,43 +5,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arbol genealógico</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/tree.css') }}">
 </head>
 
 <body>
-    <h1>Arbol Genealógico de {{ person_relationship["person_to_display"].name }} {{
-        person_relationship["person_to_display"].first_surname }} {{
-        person_relationship["person_to_display"].second_surname }}</h1>
+    <h1>Arbol Genealógico de {{ person_relationship.person_to_display.name }} {{
+        person_relationship.person_to_display.first_surname }} {{
+        person_relationship.person_to_display.second_surname }}</h1>
 
-    {% for relationship in person_relationship["family"] %}
-    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 50px;">
+    {% for relationship in person_relationship.family %}
+    <div class="family-group">
 
         <!-- Parent container -->
-        <div
-            style="display: flex; gap: 20px; border-bottom: 2px solid #333; justify-content: center; align-items: flex-end;">
-            {% for parent in relationship["parents"] %}
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div
-                    style="border: 4px solid #333; padding: 8px 12px; border-radius: 6px; background: white; z-index: 2; font-weight: bold;">
-                    <a href="http://localhost:8000/nodes/{{ parent.id }}?depth=2">{{ parent.name }} {{
-                        parent.first_surname }} {{ parent.second_surname }}</a>
+        <div class="parents-row">
+            {% for parent in relationship.parents %}
+            <div class="person-node">
+                <div class="parent-card">
+                    <a href="{{ url_for('tree_view', root_uuid_str=parent.id) }}?depth=2">
+                        {{ parent.name }} {{parent.first_surname }} {{ parent.second_surname }}</a>
                 </div>
                 <!-- Vertical line from parent -->
-                <div style="width: 2px; height: 20px; background-color: #333;"></div>
+                <div class="connector-line"></div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- <div style="border-top: 2px solid #333; width: 80%; margin-top: -2px; position: relative;"></div> -->
-
         <!-- Children container -->
-        <div style="display: flex; gap: 20px; border-top: 2px solid #333; padding-top: 0;">
-            {% for child in relationship["children"] %}
-            <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="children-row">
+            {% for child in relationship.children %}
+            <div class="person-node">
                 <!-- Vertical line from child -->
-                <div style="width: 2px; height: 20px; background-color: #333;"></div>
-                <div
-                    style="border: 1px solid #666; padding: 8px 12px; border-radius: 6px; background: #f9f9f9; font-weight: lighter;">
-                    <a href="http://localhost:8000/nodes/{{ child.id }}?depth=2">{{ child.name }} {{
+                <div class="connector-line"></div>
+                <div class="child-card">
+                    <a href="{{ url_for('tree_view', root_uuid_str=child.id) }}?depth=2">{{ child.name }} {{
                         child.first_surname }} {{ child.second_surname }}</a>
                 </div>
             </div>
@@ -50,6 +46,6 @@
     </div>
     {% endfor %}
 
-    <a href="http://localhost:8000"> Inicio</a>
+    <a href="{{ url_for('home') }}"> Inicio</a>
 
 </body>

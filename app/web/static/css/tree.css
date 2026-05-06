@@ -1,0 +1,104 @@
+/* Estilo general del cuerpo */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 40px;
+}
+
+/* Contenedor principal de cada grupo familiar */
+.family-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+/* Contenedores de Padres e Hijos */
+.parents-row,
+.children-row {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+}
+
+.parents-row {
+    border-bottom: 3px solid #333;
+    align-items: flex-end;
+}
+
+.children-row {
+    border-top: 3px solid #333;
+}
+
+/* Bloque individual de persona (tarjeta + línea) */
+.person-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Tus tarjetas específicas */
+.parent-card,
+.child-card {
+    border: 2px solid #333;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background: white;
+    z-index: 2;
+    font-weight: bold;
+    min-width: 150px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.child-card {
+    border-color: #555;
+    background-color: #c6c1c1;
+    font-weight: lighter;
+    /* Un tono ligeramente distinto para diferenciar */
+}
+
+.parent-card:hover,
+.child-card:hover {
+    background: #fde3e3;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Líneas conectoras verticales */
+.connector-line {
+    width: 3px;
+    height: 25px;
+    background-color: #333;
+}
+
+/* Estilo de los enlaces dentro de las tarjetas */
+.parent-card a,
+.child-card a {
+    text-decoration: none;
+    color: #333;
+    display: block;
+}
+
+.parent-card a:hover,
+.child-card a:hover {
+    color: #007bff;
+}
+
+li a {
+    text-decoration: none;
+    color: #333;
+    display: block;
+}
+
+li a:hover {
+    color: #007bff;
+}

@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.persons import router as persons_router
 from app.api.routes.relationships import router as relationships_router
@@ -13,3 +14,7 @@ app.include_router(relationships_router, prefix="/api")
 
 
 app.include_router(pages_router)
+
+
+# Moount static directory
+app.mount("/static", StaticFiles(directory="app/web/static"), name="static")

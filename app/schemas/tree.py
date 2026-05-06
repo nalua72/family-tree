@@ -18,3 +18,13 @@ class PersonTreeResponse(BaseModel):
     root: str
     nodes: list[PersonNode]
     edges: list[PersonEdge]
+
+
+class FamilyGroup(BaseModel):
+    parents: list[PersonNode]
+    children: list[PersonNode]
+
+
+class PersonTreeViewResponse(BaseModel):
+    person_to_display: PersonNode
+    family: list[FamilyGroup]

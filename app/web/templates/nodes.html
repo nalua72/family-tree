@@ -13,6 +13,13 @@
         person_relationship.person_to_display.first_surname }} {{
         person_relationship.person_to_display.second_surname }}</h1>
 
+    <form method="get" action="{{ url_for('tree_view', root_uuid_str=person_relationship.person_to_display.id) }}"
+        class="family-group">
+        <label for="person_id">Selecciona la profundidad del arbol:</label>
+        <input type="number" name="depth" value="{{ depth if depth_variable else 1 }}" min="0">
+        <button type="submit">Seleccionar</button>
+    </form>
+
     {% for relationship in person_relationship.family %}
     <div class="family-group">
 
@@ -21,11 +28,14 @@
             {% for parent in relationship.parents %}
             <div class="person-node">
                 <div class="parent-card">
-                    <a href="{{ url_for('tree_view', root_uuid_str=parent.id) }}?depth=2">
-                        {{ parent.name }} {{parent.first_surname }} {{ parent.second_surname }}</a>
+                    <a
+                        href="{{ url_for('tree_view', root_uuid_str=parent.id) }}?depth={{ depth if depth_variable else 1}}">
+                        {{ parent.name }} {{parent.first_surname }} {{ parent.second_surname }}
+                    </a>
                 </div>
                 <!-- Vertical line from parent -->
-                <div class="connector-line"></div>
+                <div class=" connector-line">
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -37,8 +47,10 @@
                 <!-- Vertical line from child -->
                 <div class="connector-line"></div>
                 <div class="child-card">
-                    <a href="{{ url_for('tree_view', root_uuid_str=child.id) }}?depth=2">{{ child.name }} {{
-                        child.first_surname }} {{ child.second_surname }}</a>
+                    <a
+                        href="{{ url_for('tree_view', root_uuid_str=child.id) }}?depth={{ depth if depth_variable else 1}}">
+                        {{ child.name }} {{child.first_surname }} {{ child.second_surname }}
+                    </a>
                 </div>
             </div>
             {% endfor %}

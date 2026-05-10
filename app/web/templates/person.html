@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbol genealógico</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/tree.css') }}">
+</head>
+
+<body>
+    <h1>{{ person.first_name }} {{ person.first_surname }} {{ person.second_surname }}
+    </h1>
+
+    <div class="family-group">
+        <li>
+            {{ person.city_of_birth }}
+            {{ person.date_of_birth }}
+            {{ person.date_of_death }}
+
+            {% if person.children %}
+            {% for child in person.children %}
+            {{ child.first_name }}
+            {% endfor %}
+            {% else %}
+            <p>No tiene hijos</p>
+            {% endif %}
+        </li>
+
+    </div>
+
+
+    <a href="{{ url_for('home') }}"> Inicio</a>
+    <a href="{{ url_for('tree_view', root_uuid_str=person.uuid) }}?depth=1"> Ver arbol </a>
+
+</body>

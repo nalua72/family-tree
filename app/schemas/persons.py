@@ -3,6 +3,8 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.tree import PersonNode
+
 
 class PersonBase(BaseModel):
 
@@ -10,7 +12,7 @@ class PersonBase(BaseModel):
     first_surname: Optional[str] = Field(None, min_length=1, max_length=50)
     second_surname: Optional[str] = Field(None, min_length=1, max_length=50)
 
-    # Importsant place
+    # Important dates
     date_of_birth: Optional[date] = None
     date_of_death: Optional[date] = None
 
@@ -55,3 +57,10 @@ class PersonResponse(PersonBase):
     model_config = ConfigDict(from_attributes=True)
 
     uuid: UUID
+
+
+class PersonDetailView(PersonBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    uuid: str
+    children: list[PersonResponse] = Field(default_factory=list)

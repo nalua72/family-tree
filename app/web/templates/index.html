@@ -14,7 +14,7 @@
         <p>Este son los personas de la BBDD:</p>
         {% for person in person_list %}
         <li>
-            <a href="{{ url_for('tree_view', root_uuid_str=person.uuid) }}?depth=2">
+            <a href="{{ url_for('person', person_uuid_str=person.uuid) }}">
                 {{ person.first_name }}
                 {{ person.first_surname }}
                 {{ person.second_surname }}
